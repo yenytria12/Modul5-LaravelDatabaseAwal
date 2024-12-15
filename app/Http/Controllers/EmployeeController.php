@@ -14,13 +14,12 @@ class EmployeeController extends Controller
     public function index()
     {
         $pageTitle = 'Employee List';
-        // RAW SQL QUERY
-        $employees = DB::select('
-            select *, employees.id as employee_id, positions.name as
-            position_name
-            from employees
-            left join positions on employees.position_id = positions.id
-        ');
+
+        // Query Builder untuk join employees dan positions
+        $employees = DB::table('employees')
+            ->leftJoin('positions', 'employees.position_id', '=', 'positions.id')
+            ->select('employees.*', 'employees.id as employee_id', 'positions.name as position_name')
+            ->get();
 
         return view('employee.index', [
             'pageTitle' => $pageTitle,
@@ -34,8 +33,10 @@ class EmployeeController extends Controller
     public function create()
     {
         $pageTitle = 'Create Employee';
-        // RAW SQL Query
-        $positions = DB::select('select * from positions');
+
+        // Query Builder untuk mendapatkan data positions
+        $positions = DB::table('positions')->get();
+
         return view('employee.create', compact('pageTitle', 'positions'));
     }
 
@@ -49,16 +50,19 @@ class EmployeeController extends Controller
             'email' => 'Isi :attribute dengan format yang benar',
             'numeric' => 'Isi :attribute dengan angka'
         ];
+
         $validator = Validator::make($request->all(), [
             'firstName' => 'required',
             'lastName' => 'required',
             'email' => 'required|email',
             'age' => 'required|numeric',
         ], $messages);
+
         if ($validator->fails()) {
             return redirect()->back()->withErrors($validator)->withInput();
         }
-        // INSERT QUERY
+
+        // Query Builder untuk INSERT data ke employees
         DB::table('employees')->insert([
             'firstname' => $request->firstName,
             'lastname' => $request->lastName,
@@ -66,6 +70,7 @@ class EmployeeController extends Controller
             'age' => $request->age,
             'position_id' => $request->position,
         ]);
+
         return redirect()->route('employees.index');
     }
 
@@ -75,20 +80,29 @@ class EmployeeController extends Controller
     public function show(string $id)
     {
         $pageTitle = 'Employee Detail';
-        // RAW SQL QUERY
-        $employee = collect(DB::select('
-            select *, employees.id as employee_id, positions.name as
-            position_name
-            from employees
-            left join positions on employees.position_id = positions.id
-            where employees.id = ?', [$id]))->first();
+
+        // Query Builder untuk mendapatkan detail employee
+        $employee = DB::table('employees')
+            ->leftJoin('positions', 'employees.position_id', '=', 'positions.id')
+            ->select('employees.*', 'employees.id as employee_id', 'positions.name as position_name')
+            ->where('employees.id', $id)
+            ->first();
+
         return view('employee.show', compact('pageTitle', 'employee'));
     }
 
-
+    /**
+     * Show the form for editing the specified resource.
+     */
     public function edit(string $id)
     {
-        //
+        $pageTitle = 'Edit Employee';
+
+        // Query Builder untuk mendapatkan data employee dan positions
+        $employee = DB::table('employees')->where('id', $id)->first();
+        $positions = DB::table('positions')->get();
+
+        return view('employee.edit', compact('pageTitle', 'employee', 'positions'));
     }
 
     /**
@@ -96,7 +110,35 @@ class EmployeeController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        //
+        $messages = [
+            'required' => ':Attribute harus diisi.',
+            'email' => 'Isi :attribute dengan format yang benar',
+            'numeric' => 'Isi :attribute dengan angka'
+        ];
+
+        $validator = Validator::make($request->all(), [
+            'firstName' => 'required',
+            'lastName' => 'required',
+            'email' => 'required|email',
+            'age' => 'required|numeric',
+        ], $messages);
+
+        if ($validator->fails()) {
+            return redirect()->back()->withErrors($validator)->withInput();
+        }
+
+        // Query Builder untuk UPDATE data employees
+        DB::table('employees')
+            ->where('id', $id)
+            ->update([
+                'firstname' => $request->firstName,
+                'lastname' => $request->lastName,
+                'email' => $request->email,
+                'age' => $request->age,
+                'position_id' => $request->position,
+            ]);
+
+        return redirect()->route('employees.index');
     }
 
     /**
@@ -104,10 +146,11 @@ class EmployeeController extends Controller
      */
     public function destroy(string $id)
     {
-        // QUERY BUILDER
+        // Query Builder untuk DELETE data employee
         DB::table('employees')
             ->where('id', $id)
             ->delete();
+
         return redirect()->route('employees.index');
     }
 }
