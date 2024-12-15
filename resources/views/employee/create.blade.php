@@ -63,7 +63,7 @@ dismissible fade show">
                     </div>
                     <hr>
                     <div class="row">
-                    <div class="col-md-6 mb-3">
+                        <div class="col-md-6 mb-3">
                             <label for="firstName" class="form label">First Name</label>
                             <input class="form-control @error('firstName') is-invalid @enderror" type="text"
                                 name="firstName" id="firstName" value="{{ old ('firstName') }}" placeholder="Enter First Name">
@@ -93,6 +93,19 @@ dismissible fade show">
                             <input class="form-control  @error('age') is-invalid @enderror" type="text"
                                 name="age" id="age" value="" placeholder="Enter Age">
                             @error('age')
+                            <div class="text-danger"><small>{{ $message }}</small></div>
+                            @enderror
+                        </div>
+                        <div class="col-md-12 mb-3">
+                            <label for="position" class="form-label">Position</label>
+                            <select name="position" id="position" class="form-select">
+                                @foreach ($positions as $position)
+                                <option value="{{ $position->id }}"
+                                    {{ old('position') == $position->id ? 'selected' : '' }}>
+                                    {{ $position->code.' - '.$position->name }}</option>
+                                @endforeach
+                            </select>
+                            @error('position')
                             <div class="text-danger"><small>{{ $message }}</small></div>
                             @enderror
                         </div>
